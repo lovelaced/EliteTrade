@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS systems (
+	name VARCHAR(255) NOT NULL,
+	xcoord REAL NOT NULL,
+	ycoord REAL NOT NULL,
+	zcoord REAL NOT NULL,
+
+	PRIMARY KEY (name)
+)
