@@ -13,8 +13,6 @@ class system:
         self.x = x
         self.y = y
         self.z = z
-        self.distancefrom = {}
-        self.possiblejumps = []
 
     def calc_distance(self, other):
         lightyears = math.sqrt((other.x - self.x)**2 + (other.y - self.y)**2 + (other.z - self.z)**2)
@@ -52,10 +50,16 @@ class systems:
                     (system_1.name, system_2.name, distance))
         conn.commit()
 
-
+    def get_distance(self, system, low = 150, high = 180):
+        SQL  = "SELECT system_2, distance FROM distances WHERE system_1 LIKE %s AND distance BETWEEN %s AND %s;"
+        data = (system,low,high)
+        cur.execute(SQL, data)
+        for n in cur:
+            print(n)
 if __name__ == '__main__':
     sys = systems()
     sys.reset_distances()
+    sys.get_distance("39 Tauri")
     #Examples
     #sys.add("39 Tauri", -7.31, -20.28, -50.91)
     #sys.add("Aegaenon", 46.91, 23.63, -59.75)
