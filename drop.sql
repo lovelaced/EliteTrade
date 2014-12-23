@@ -1,1 +1,2 @@
+DROP TABLE IF EXISTS distances;
 DROP TABLE IF EXISTS systems;
