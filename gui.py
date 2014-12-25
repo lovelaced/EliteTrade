@@ -2,6 +2,7 @@
 
 import sys
 import math
+import random
 import ed
 
 from pyqtgraph.Qt import QtCore, QtGui
@@ -40,12 +41,17 @@ w.addItem(gz)
 
 systems =  ed.systems()
 n = len(systems.list)
-pos = np.empty((n, 3))
+pos  = np.empty((n, 3))
+col  = np.empty((n,4))
+size = np.empty((n,1))
+
 for i in range(0, n):
     s = systems.list[i]
-    pos[i] = (s.x/10,s.y/10,s.z/10)
+    pos[i]  = (s.x/20,s.y/20,s.z/20)
+    col[i]  = (random.random(), random.random(), random.random(), 1.0)
+    size    = (random.uniform(0.05, 0.23),)
                             
-sp1 = gl.GLScatterPlotItem(pos=pos, size=(0.2,), color=(1.0, 0.0, 0.0, 0.8), pxMode=False)
+sp1 = gl.GLScatterPlotItem(pos=pos, size=size, color=col, pxMode=False)
 #sp1.translate(5,5,0)
 w.addItem(sp1)
 
