@@ -27,11 +27,11 @@ class system:
  
 # Base structure for a collection of systems.
 class systems:
-    dict = {}
+    _dict = {}
     def __init__(self):
         cur.execute("SELECT * FROM systems;")
         for n in cur: 
-            self.dict[n[0]] = system(n[0], n[1], n[2], n[3])
+            self._dict[n[0]] = system(n[0], n[1], n[2], n[3])
     
     def add(self, system_name, x, y, z):
         global system #needed because otherwise system falls into local namespace.
@@ -39,45 +39,55 @@ class systems:
         SQL  = "INSERT INTO systems (name, xcoord, ycoord, zcoord) VALUES (%s, %s, %s, %s);"
         data = (new_system.name, new_system.x, new_system.y, new_system.z)
         cur.execute(SQL, data)
-        for system in self.dict:
-            distance = new_system.calc_distance(self.dict[system])
+        for system in self._dict:
+            distance = new_system.calc_distance(self._dict[system])
             SQL  = "INSERT INTO distances (system_1, system_2, distance) VALUES (%s, %s, %s);"
-            data = (new_system.name, self.dict[system].name, distance)
+            data = (new_system.name, self._dict[system].name, distance)
             cur.execute(SQL, data)
 
-        self.dict[new_system.name] = new_system
+        self._dict[new_system.name] = new_system
         conn.commit()
         self.reset_distances()
     
     def remove(self, sysname):
         try:
-            del self.dict[sysname]
+            del self._dict[sysname]
+            SQL  = "DELETE FROM distances WHERE system_1 = %s OR system_2 = %s;"
+            data = (sysname, sysname)
+            cur.execute(SQL, data)
+
+            SQL  = "DELETE FROM systems WHERE name = %s;"
+            data = (sysname,)
+            cur.execute(SQL, data)
+
+            conn.commit()
         except KeyError:
             print(sysname + " not found in systems")
             return
 
-        SQL  = "DELETE FROM distances WHERE system_1 = %s OR system_2 = %s;"
-        data = (sysname, sysname)
-        cur.execute(SQL, data)
-
-        SQL  = "DELETE FROM systems WHERE name = %s;"
-        data = (sysname,)
-        cur.execute(SQL, data)
-
-        conn.commit()
             
-    #TODO: finish me.
-    def update(self, system_name, x, y, z):
-        pass
+    #TODO: Should names be updatable?
+    def update(self, sysname, x, y, z):
+        try:
+            self._dict[sysname].x = x 
+            self._dict[sysname].y = y 
+            self._dict[sysname].z = z 
+
+            SQL  + "UPDATE systems SET xcoord = %s, ycoord = %s, zcoord = %s WHERE name = %s;"
+            data = (x, y, z, sysname)
+            cur.execute(SQL, data)
+            conn.commit()
+        except KeyError:
+            print(sysname + " not found in systems")
 
     def reset_distances(self):
         # Drop all distance data and calculate anew.
         cur.execute("DELETE FROM distances")
-        for system_1 in self.dict:
-            for system_2 in self.dict:
-                distance = self.dict[system_1].calc_distance(self.dict[system_2])
+        for system_1 in self._dict:
+            for system_2 in self._dict:
+                distance = self._dict[system_1].calc_distance(self._dict[system_2])
                 SQL  = "INSERT INTO distances (system_1, system_2, distance) VALUES (%s, %s, %s);"
-                data = (self.dict[system_1].name, self.dict[system_2].name, distance)
+                data = (self._dict[system_1].name, self._dict[system_2].name, distance)
                 cur.execute(SQL, data)
         conn.commit()
 
@@ -87,6 +97,9 @@ class systems:
         cur.execute(SQL, data)
         for n in cur:
             print(n)
+
+    def get_size(self):
+        return len(self._dict)
 
 if __name__ == '__main__':
     sys = systems()

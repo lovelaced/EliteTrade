@@ -40,7 +40,7 @@ w.addItem(gz)
 ## 
 
 systems =  ed.systems()
-n = len(systems.dict)
+n = systems.get_size()
 pos  = np.empty((n, 3))
 col  = np.empty((n,4))
 size = np.empty((n,1))
