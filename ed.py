@@ -65,7 +65,6 @@ class systems:
         cur.execute(SQL, data)
 
         conn.commit()
-        self.reset_distances() 
             
     #TODO: finish me.
     def update(self, system_name, x, y, z):
