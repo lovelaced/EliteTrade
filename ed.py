@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
 # Authors: Anton Vilhelm Ásgeirsson <anton@antonvilhelm.is>, valka <valka@tfwno.gf>
 # A tool to help determine the best trade routes in Elite & Dangerous
 # LICENSE: WTFPL
@@ -142,11 +142,47 @@ class systems:
         except KeyError:
             print("There's no system by that name.")
 
+    # Returns a list of possible jumps from a given system
+    def getjumps(self, sysname, low = 1, high = 65):
+        return self.get_distance(sysname, low, high)
+
+    # Returns the dict of systems
+    def get_list(self):
+        return self._dict
+
+    # Attempts to find the best route between systems from a given starting point
+    def findroute(self, i, start, pairs, routelist, firstrun):
+        if firstrun:
+            for system1 in sys.getjumps(i.name):
+                for system2 in sys.getjumps(system1[0]):
+                    k=0
+                    for system3 in sys.getjumps(system2[0]):
+                        for k in pairs:
+                            print pairs[0][k][0]
+                        if system3 in pairs:
+                            routelist.append(self.get_system(system1))
+                            routelist.append(self.get_system(system2))
+                            routelist.append(self.get_system(system3))
+                            print routelist
+                            print i.name + ", " + system1[0] + ", " + system2[0] + ", " + system3[0] + ", "
+                            if system3[0] == start.name:
+                                print "End route."
+                                return 0
+                            self.findroute(start, i, pairs, routelist, False)
 if __name__ == '__main__':
     sys = systems()
     #sys.reset_distances()
     #sys.add("Test0101", 0.1,0.1,0.1)
-    sys.get_distance("Test0101",180, 500)
+    k = 0
+    routelist = []
+    print sys.get_list()
+
+    for i in sys.get_list():
+        pairlist = []
+        pairlist.append(sys.get_distance(i.name))
+        routelist.append(i.name)
+        sys.findroute(i, sys.get_list()[k], pairlist, routelist, True)
+        k+=1
     #Examples
     #sys.add("39 Tauri", -7.31, -20.28, -50.91)
     #sys.add("Aegaenon", 46.91, 23.63, -59.75)
