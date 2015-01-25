@@ -33,6 +33,8 @@ class systems:
         for n in cur: 
             self._dict[n[0]] = system(n[0], n[1], n[2], n[3])
     
+    # Adds a system to the dict, writes to DB and calculates distance vectors
+    # from this system to all other known systems.
     def add(self, system_name, x, y, z):
         global system #needed because otherwise system falls into local namespace.
         new_system = system(system_name, x, y, z)
@@ -49,6 +51,7 @@ class systems:
         conn.commit()
         self.reset_distances()
     
+    # Removes a system from the DB as well as any distance vectors.
     def remove(self, sysname):
         try:
             del self._dict[sysname]
@@ -66,48 +69,84 @@ class systems:
             return
 
             
+    # Updates a vector in the DB and creates new distance vectors
     #TODO: Should names be updatable?
+    #TODO: Update distance vectors.
     def update(self, sysname, x, y, z):
         try:
             self._dict[sysname].x = x 
             self._dict[sysname].y = y 
             self._dict[sysname].z = z 
 
-            SQL  + "UPDATE systems SET xcoord = %s, ycoord = %s, zcoord = %s WHERE name = %s;"
+            SQL  = "UPDATE systems SET xcoord = %s, ycoord = %s, zcoord = %s WHERE name = %s;"
             data = (x, y, z, sysname)
             cur.execute(SQL, data)
             conn.commit()
         except KeyError:
             print(sysname + " not found in systems")
 
+    # Drop all distance vectors from table and recalculate. Use sparingly.
     def reset_distances(self):
         # Drop all distance data and calculate anew.
         cur.execute("DELETE FROM distances")
         for system_1 in self._dict:
             for system_2 in self._dict:
                 distance = self._dict[system_1].calc_distance(self._dict[system_2])
-                SQL  = "INSERT INTO distances (system_1, system_2, distance) VALUES (%s, %s, %s);"
+                SQL  = """
+                          INSERT INTO distances (system_1, system_2, distance) 
+                          VALUES (%s, %s, %s);
+                       """
                 data = (self._dict[system_1].name, self._dict[system_2].name, distance)
                 cur.execute(SQL, data)
         conn.commit()
 
-    def get_distance(self, system, low = 150, high = 180):
-        SQL  = "SELECT system_2, distance FROM distances WHERE system_1 = %s AND distance BETWEEN %s AND %s;"
+    def get_distance(self, system, low = None, high = None):
+        if low is None:
+            low  = 150
+        if high is None:
+            high = 180
+
+        SQL  = """
+                  SELECT 
+                      system_2, distance 
+                  FROM 
+                      distances 
+                  WHERE 
+                      system_1 = %s AND distance BETWEEN %s AND %s
+                  ORDER BY 
+                      distance ASC;
+               """
         data = (system,low,high)
         cur.execute(SQL, data)
-        for n in cur:
-            print(n)
 
+        print("{0:20} {1:s}".format('System', 'distance'))
+        print('-'*30)
+        for n in cur:
+            print("{0:20} {1:1f}".format(n[0], n[1]))
+
+    # Returns the number of systems logged.
     def get_size(self):
         return len(self._dict)
 
+    # Returns a list of the system names.
+    def get_system_names(self):
+        list = []
+        for s in self._dict:
+           list.append(s) 
+        return list
+    
+    # Returns a system object, handles KeyErrors.
+    def get_system(self, sysname):
+        try:
+            return self._dict[sysname]
+        except KeyError:
+            print("There's no system by that name.")
+
 if __name__ == '__main__':
     sys = systems()
-    sys.reset_distances()
-    sys.get_distance("Test0101")
-    sys.add("Test0101", 0.1,0.1,0.1)
-    sys.get_distance("Test0101")
-    sys.remove("Test0101")
+    #sys.reset_distances()
+    #sys.add("Test0101", 0.1,0.1,0.1)
+    sys.get_distance("Test0101",180, 500)
     #Examples
     #sys.add("39 Tauri", -7.31, -20.28, -50.91)
     #sys.add("Aegaenon", 46.91, 23.63, -59.75)

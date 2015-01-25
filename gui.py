@@ -45,13 +45,12 @@ pos  = np.empty((n, 3))
 col  = np.empty((n,4))
 size = np.empty((n,1))
 
-c = 0
-for i in systems.dict:
-    s = systems.dict[i]
-    pos[c]  = (s.x/20,s.y/20,s.z/20)
-    col[c]  = (random.random(), random.random(), random.random(), 1.0)
+l = systems.get_system_names()
+for i in range(0,systems.get_size()):
+    s = systems.get_system(l[i])
+    pos[i]  = (s.x/20,s.y/20,s.z/20)
+    col[i]  = (random.random(), random.random(), random.random(), 1.0)
     size    = (random.uniform(0.05, 0.23),)
-    c += 1
                             
 sp1 = gl.GLScatterPlotItem(pos=pos, size=size, color=col, pxMode=False)
 #sp1.translate(5,5,0)
