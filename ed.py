@@ -177,12 +177,7 @@ class systems:
 
     # Queries the distance table for all systems within the low/high limits.
     # If called with no params it defaults to 150/180.
-    def get_distance(self, system, low = None, high = None):
-        if low is None:
-            low  = 150
-        if high is None:
-            high = 180
-
+    def get_distance(self, system_name, low = 160, high = 180):
         SQL  = """
                   SELECT 
                       system_2, distance 
@@ -193,7 +188,7 @@ class systems:
                   ORDER BY 
                       distance ASC;
                """
-        data = (system,low,high)
+        data = (system_name,low,high)
         cur.execute(SQL, data)
         
         dist_list = []
@@ -220,12 +215,31 @@ class systems:
             print("There's no system by that name.")
 
     # Returns a list of possible jumps from a given system
-    def getjumps(self, sysname, low = 1, high = 65):
-        return self.get_distance(sysname, low, high)
+    def get_jumps(self, system_name, low = 1, high = 65):
+        return self.get_distance(system_name, low, high)
 
-    # Returns the dict of systems
-    def get_list(self):
-        return self._dict
+    # Attempts to find the best route between systems from system_name and ending there as well.
+    def find_route(self, system_name, jump_list = [], jump_min = 6):
+        try:
+            target_systems = self.get_distance(system_name)
+            for target in target_systems:
+                self.reverse_route(str(target[0]), system_name, 0, 2)
+            #self.reverse_route(str(target_systems[0][1]), system_name, 0, 2)
+            
+        except KeyError:
+            print(system_name + " not found in systems.")
+
+    # Helper function for find_route
+    def reverse_route(self, target_system, base_system, level, max_level=2):
+        print(base_system)
+        for s in self.get_jumps(target_system):
+            print("Target_system: " + target_system + " => " + s[0])
+            if s[0] == base_system:
+                print(s[0])
+            elif level == max_level:
+                return
+            else:
+                return self.reverse_route(s[0], base_system, level+1, max_level)    
 
     # Attempts to find the best route between systems from a given starting point
     def findroute(self, i, start, pairs, routelist, firstrun):
@@ -235,31 +249,20 @@ class systems:
                     k=0
                     for system3 in sys.getjumps(system2[0]):
                         for k in pairs:
-                            print pairs[0][k][0]
+                            print(k)
                         if system3 in pairs:
                             routelist.append(self.get_system(system1))
                             routelist.append(self.get_system(system2))
                             routelist.append(self.get_system(system3))
-                            print routelist
-                            print i.name + ", " + system1[0] + ", " + system2[0] + ", " + system3[0] + ", "
+                            print(routelist)
+                            print(i.name + ", " + system1[0] + ", " + system2[0] + ", " + system3[0] + ", ")
                             if system3[0] == start.name:
-                                print "End route."
+                                print("End route.")
                                 return 0
                             self.findroute(start, i, pairs, routelist, False)
 if __name__ == '__main__':
     sys = systems()
-    #sys.reset_distances()
-    #sys.add("Test0101", 0.1,0.1,0.1)
-    k = 0
-    routelist = []
-    print sys.get_list()
-
-    for i in sys.get_list():
-        pairlist = []
-        pairlist.append(sys.get_distance(i.name))
-        routelist.append(i.name)
-        sys.findroute(i, sys.get_list()[k], pairlist, routelist, True)
-        k+=1
+    sys.find_route("39 Tauri")
     #Examples
     #sys.add("39 Tauri", -7.31, -20.28, -50.91)
     #sys.add("Aegaenon", 46.91, 23.63, -59.75)
