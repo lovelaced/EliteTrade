@@ -222,24 +222,33 @@ class systems:
     def find_route(self, system_name, jump_list = [], jump_min = 6):
         try:
             target_systems = self.get_distance(system_name)
+            route_list = []
             for target in target_systems:
-                self.reverse_route(str(target[0]), system_name, 0, 2)
+                route_list.append(self.reverse_route(target[0], system_name, 0, 2))
+            print(route_list)
             #self.reverse_route(str(target_systems[0][1]), system_name, 0, 2)
             
         except KeyError:
             print(system_name + " not found in systems.")
 
     # Helper function for find_route
-    def reverse_route(self, target_system, base_system, level, max_level=2):
-        print(base_system)
+    def reverse_route(self, target_system, base_system, level, max_level=3, hop_list=[], prev_system=None):
+        print(level)
         for s in self.get_jumps(target_system):
             print("Target_system: " + target_system + " => " + s[0])
-            if s[0] == base_system:
-                print(s[0])
-            elif level == max_level:
+            if s[0] == prev_system:
                 return
+            elif s[0] == base_system:
+                hop_list.append(s[0])
+                return hop_list
+            elif level == max_level:
+                for i in range(0,max_level):
+                    hop_list.pop()
+                return 
             else:
-                return self.reverse_route(s[0], base_system, level+1, max_level)    
+                hop_list.append(s[0])
+                return self.reverse_route(s[0], base_system, level+1, max_level, hop_list, prev_system=target_system)    
+        return hop_list
 
     # Attempts to find the best route between systems from a given starting point
     def findroute(self, i, start, pairs, routelist, firstrun):
