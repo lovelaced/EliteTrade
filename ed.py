@@ -7,6 +7,7 @@
 import psycopg2
 import math
 import random
+import pprint
  
 conn = psycopg2.connect("dbname=postgres user=postgres")
 cur = conn.cursor()
@@ -191,10 +192,10 @@ class systems:
         data = (system_name,low,high)
         cur.execute(SQL, data)
         
-        dist_list = []
+        dist_set = set() 
         for n in cur:
-            dist_list.append(n)
-        return dist_list
+            dist_set.add(n[0])
+        return dist_set
 
     # Returns the number of systems logged.
     def get_size(self):
@@ -222,56 +223,58 @@ class systems:
     def find_route(self, system_name, jump_list = [], jump_min = 6):
         try:
             target_systems = self.get_distance(system_name)
-            route_list = []
+            route_dict = {}
+            graph = self.gen_graph()
+            #route_dict[target_systems] = self.reverse_route(target_systems, system_name, graph)
             for target in target_systems:
-                route_list.append(self.reverse_route(target[0], system_name, 0, 2))
-            print(route_list)
+                l = []
+                for r in self.reverse_route(target, system_name, graph):
+                    l.append(r) 
+                route_dict[target] = l
+            
+            for r in route_dict.items():
+                for n in r[1]:
+                    if len(n) < 6:
+                        print(n)
+                #pprint.PrettyPrinter(indent=4).pprint(route_dict["Rapa Bao"])
+
             #self.reverse_route(str(target_systems[0][1]), system_name, 0, 2)
             
         except KeyError:
             print(system_name + " not found in systems.")
 
-    # Helper function for find_route
-    def reverse_route(self, target_system, base_system, level, max_level=3, hop_list=[], prev_system=None):
-        print(level)
-        for s in self.get_jumps(target_system):
-            print("Target_system: " + target_system + " => " + s[0])
-            if s[0] == prev_system:
-                return
-            elif s[0] == base_system:
-                hop_list.append(s[0])
-                return hop_list
-            elif level == max_level:
-                for i in range(0,max_level):
-                    hop_list.pop()
-                return 
-            else:
-                hop_list.append(s[0])
-                return self.reverse_route(s[0], base_system, level+1, max_level, hop_list, prev_system=target_system)    
-        return hop_list
 
-    # Attempts to find the best route between systems from a given starting point
-    def findroute(self, i, start, pairs, routelist, firstrun):
-        if firstrun:
-            for system1 in sys.getjumps(i.name):
-                for system2 in sys.getjumps(system1[0]):
-                    k=0
-                    for system3 in sys.getjumps(system2[0]):
-                        for k in pairs:
-                            print(k)
-                        if system3 in pairs:
-                            routelist.append(self.get_system(system1))
-                            routelist.append(self.get_system(system2))
-                            routelist.append(self.get_system(system3))
-                            print(routelist)
-                            print(i.name + ", " + system1[0] + ", " + system2[0] + ", " + system3[0] + ", ")
-                            if system3[0] == start.name:
-                                print("End route.")
-                                return 0
-                            self.findroute(start, i, pairs, routelist, False)
+    # Helper function for find_route
+    def reverse_route(self, target, origin, graph, visited=None):
+        if visited is None:
+            visited = set()
+
+        visited |= {target}
+        for s in graph[target]:
+            if s in visited:
+                continue
+            if s == origin:
+                yield [target, origin]
+            else:
+                for route in self.reverse_route(s, origin, graph, visited):
+                    yield [target] + route
+
+    # Generates graphs of all connected systems and puts it in a dictionary.
+    def gen_graph(self):
+        d = {}
+        for s in self._dict:
+            d[s] = self.get_jumps(s)
+        return d
+
 if __name__ == '__main__':
     sys = systems()
-    sys.find_route("39 Tauri")
+    l = sys.get_system_names()
+    for s in l:
+        sys.find_route(s)
+    #sys.find_route("Arouca")
+    #b = sys.gen_graph()
+    #pprint.PrettyPrinter(indent=4).pprint(b)
+    
     #Examples
     #sys.add("39 Tauri", -7.31, -20.28, -50.91)
     #sys.add("Aegaenon", 46.91, 23.63, -59.75)
